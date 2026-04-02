@@ -1,38 +1,37 @@
 import streamlit as st
 import urllib.parse
+import requests
 
-def generate_video_ui():
-    st.subheader("🎬 Alpha Cinema Lab (Powered by Veo)")
-    
-    # වීඩියෝවට අවශ්‍ය විස්තරය (Prompt)
-    video_prompt = st.text_area("වීඩියෝවේ විය යුතු දේ විස්තර කරන්න:", 
-                                placeholder="A futuristic city with flying cars, sunset, 4k cinematic style...")
-    
-    # Models තෝරාගැනීම (Pollinations docs වල ඇති ඒවා)
-    model_choice = st.selectbox("Model එක තෝරන්න:", ["veo", "wan", "ltx-2", "p-video"])
-    
-    # වීඩියෝවේ කාලය
-    duration = st.slider("කාලය (තත්පර):", 2, 10, 4)
+# 1. Streamlit secrets වලින් API Key එක ලබා ගැනීම
+# ඔයා secrets.toml එකේ POLLINATIONS_API_KEY කියලා මේක දාලා තියෙන්න ඕනේ
+POLL_API_KEY = st.secrets["POLLINATIONS_API_KEY"]
 
-    if st.button("Generate Video ✨"):
-        if video_prompt:
-            with st.spinner("Alpha AI is rendering your masterpiece..."):
-                try:
-                    # Prompt එක URL එකකට ගැලපෙන සේ සැකසීම
-                    encoded_prompt = urllib.parse.quote(video_prompt)
-                    
-                    # Pollinations Video API URL එක
-                    # ඔයාට API Key එකක් තියෙනවා නම් අන්තිමට &key=YOUR_KEY ලෙස එකතු කරන්න
-                    video_url = f"https://gen.pollinations.ai/video/{encoded_prompt}?model={model_choice}&duration={duration}"
-                    
-                    # වීඩියෝව පෙන්වීම
-                    st.video(video_url)
-                    st.success("ඔයාගේ වීඩියෝව සූදානම්!")
-                    
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.warning("කරුණාකර විස්තරයක් (Prompt) ඇතුළත් කරන්න.")
+def generate_video_url(prompt, model="veo", duration=4):
+    # Prompt එක URL එකකට ගැලපෙන සේ encode කිරීම
+    encoded_prompt = urllib.parse.quote(prompt)
+    
+    # Pollinations Documentation එකේ විදිහට URL එක සැකසීම
+    # මෙතනදී key එක query parameter එකක් ලෙස යවනවා (ලේසිම ක්‍රමය)
+    video_url = f"https://gen.pollinations.ai/video/{encoded_prompt}?model={model}&duration={duration}&key={POLL_API_KEY}"
+    
+    return video_url
 
-# Tab එක ඇතුළේ call කරන්න
-generate_video_ui()
+# UI කොටස
+st.title("🎬 Alpha AI Video Lab")
+
+video_prompt = st.text_input("වීඩියෝවට අවශ්‍ය දේ ලියන්න:", "a sunset timelapse")
+
+if st.button("Generate Video"):
+    if video_prompt:
+        with st.spinner("Alpha AI is generating your video..."):
+            # URL එක සාදා ගැනීම
+            final_url = generate_video_url(video_prompt)
+            
+            # පරීක්ෂා කිරීම සඳහා URL එක පෙන්වන්න (විකල්ප)
+            # st.write(f"Debug URL: {final_url}")
+            
+            # වීඩියෝව පෙන්වීම
+            st.video(final_url)
+            st.success("වීඩියෝව සාර්ථකව නිර්මාණය වුණා!")
+    else:
+        st.warning("කරුණාකර prompt එකක් ඇතුළත් කරන්න.")
