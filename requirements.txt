@@ -12,3 +12,4 @@ requests
 supabase
 extra-streamlit-components
 duckduckgo_search
+gTTS
