@@ -1,50 +1,46 @@
 import streamlit as st
 import urllib.parse
 
-# 1. Secrets වලින් API Key එක ගන්න (වීඩියෝ වලට පාවිච්චි කරපු එකම තමයි)
+# 1. Secrets වලින් API Key එක ලබා ගැනීම
 POLL_API_KEY = st.secrets["POLLINATIONS_API_KEY"]
 
-def generate_music_ui():
-    st.subheader("🎵 Alpha Music Lab")
-    st.write("ඔයාට අවශ්‍ය ඕනෑම වර්ගයක සින්දුවක් මෙතනින් නිර්මාණය කරගන්න.")
+def generate_voice_ui():
+    st.subheader("🎙️ Alpha Voice Lab")
+    st.write("ඔයා දෙන ඕනෑම වාක්‍යයක් AI හඬකින් කියවන්න මෙතනින් පුළුවන්.")
 
-    # සින්දුව ගැන විස්තරය (Prompt)
-    music_prompt = st.text_input("සින්දුවේ ස්වභාවය ලියන්න:", placeholder="Upbeat jazz with saxophone, Lo-fi hip hop for studying, Cinematic epic drums...")
+    # කතා කළ යුතු දේ
+    input_text = st.text_area("කියවිය යුතු දේ ලියන්න:", "Hello Hasith, welcome to Alpha AI Voice Lab!")
     
-    col1, col2 = st.columns(2)
-    # සින්දුවේ කාලය (තත්පර 3 සිට 300 දක්වා පුළුවන්)
-    duration = col1.slider("කාලය (තත්පර):", 3, 60, 30)
-    # Instrumental ද නැද්ද යන්න
-    is_instrumental = col2.toggle("Instrumental Only", value=True)
+    # හඬවල් (Voices) තෝරාගැනීම - Docs වල තියෙන ඒවා
+    voice_choice = st.selectbox("හඬ තෝරන්න:", 
+                                ["nova", "alloy", "echo", "fable", "onyx", "shimmer", "ballad", "coral"])
+    
+    # Output format එක (MP3 තමයි හොඳම)
+    out_format = st.selectbox("Format එක:", ["mp3", "wav", "aac"])
 
-    if st.button("Generate Music 🎧"):
-        if music_prompt:
-            with st.spinner("Alpha AI ඔයාගේ සින්දුව හදමින් පවතිනවා..."):
+    if st.button("Generate Voice 🔊"):
+        if input_text:
+            with st.spinner("Alpha AI හඬ සකස් කරමින් පවතී..."):
                 try:
-                    # Prompt එක URL එකකට ගැලපෙන සේ encode කිරීම
-                    encoded_text = urllib.parse.quote(music_prompt)
+                    # පෙළ URL එකකට ගැලපෙන සේ සැකසීම
+                    encoded_text = urllib.parse.quote(input_text)
                     
-                    # Pollinations Music API URL එක
-                    # model=elevenmusic එක අනිවාර්යයි
-                    music_url = (
+                    # Pollinations Audio API URL එක
+                    voice_url = (
                         f"https://gen.pollinations.ai/audio/{encoded_text}?"
-                        f"model=elevenmusic&"
-                        f"duration={duration}&"
-                        f"instrumental={'true' if is_instrumental else 'false'}&"
+                        f"voice={voice_choice}&"
+                        f"response_format={out_format}&"
                         f"key={POLL_API_KEY}"
                     )
                     
-                    # සින්දුව ප්ලේ කරන්න player එකක් පෙන්වීම
-                    st.audio(music_url)
-                    st.success("ඔන්න සින්දුව හදලා ඉවරයි!")
-                    
-                    # Download කරගන්න link එකක්
-                    st.markdown(f"[⬇️ Download MP3]({music_url})")
+                    # හඬ ප්ලේ කිරීම
+                    st.audio(voice_url)
+                    st.success("හඬ සාර්ථකව නිර්මාණය වුණා!")
                     
                 except Exception as e:
                     st.error(f"Error: {e}")
         else:
-            st.warning("කරුණාකර සින්දුව ගැන විස්තරයක් ඇතුළත් කරන්න.")
+            st.warning("කරුණාකර කියවිය යුතු පෙළක් ඇතුළත් කරන්න.")
 
-# App එකේ Music Tab එක ඇතුළේ මේක call කරන්න
-generate_music_ui()
+# App එකේ Tab එකක් ඇතුළේ මේක පාවිච්චි කරන්න
+generate_voice_ui()
