@@ -1,29 +1,34 @@
 import streamlit as st
 import requests
 import base64
+import io
 
-def alpha_long_song_studio():
-    st.subheader("🎤 Alpha Long Song Studio")
+def alpha_full_song_only():
+    st.markdown("<h2 style='text-align: center;'>🎶 Alpha Full Song Studio</h2>", unsafe_allow_html=True)
     
-    # පද පේළි ගොඩක් ලියන්න ඉඩ දෙනවා
-    lyrics = st.text_area("සින්දුවේ පද පේළි (දිගට ලියන්න):", 
-                          "In the stars of Alpha AI, We reach for the neon sky.\n"
-                          "Hasith leads the way today, To a brighter digital day.\n"
-                          "We are coding every night, Making dreams and making light.")
+    # 1. පද පේළි ඇතුළත් කරන තැන
+    lyrics = st.text_area("සින්දුවේ පද පේළි (එක් පේළියකට එක බැගින් ලියන්න):", 
+                          "In the stars of Alpha AI,\nWe reach for the neon sky.\nHasith leads the way today,\nTo a brighter digital day.",
+                          height=150)
 
+    # 2. හඬ තෝරන තැන
     voice_options = {
         "Female (Twinkle)": "en_female_f08_twinkle",
         "Male (Lobby)": "en_male_m03_lobby"
     }
-    selected_voice = st.selectbox("Singer:", list(voice_options.keys()))
+    selected_voice = st.selectbox("ගායකයා තෝරන්න:", list(voice_options.keys()))
 
-    if st.button("Generate Full Song 🎧"):
+    if st.button("Generate Full Song 🎧", use_container_width=True):
         if lyrics:
-            # 1. පද පේළි ටික කොටස් වලට කඩනවා (පේළියෙන් පේළියට)
+            # පද පේළි ටික ලිස්ට් එකකට වෙන් කර ගැනීම
             lines = [line.strip() for line in lyrics.split('\n') if line.strip()]
             
-            with st.spinner(f"කොටස් {len(lines)} කින් සින්දුව නිර්මාණය කරයි..."):
-                for i, line in enumerate(lines):
+            # සියලුම audio කොටස් එකතු කරන තැන (Buffer)
+            combined_audio = io.BytesIO()
+            
+            with st.spinner(f"Alpha AI පද්ධතිය සම්පූර්ණ සින්දුව නිර්මාණය කරමින් පවතී..."):
+                success_count = 0
+                for line in lines:
                     try:
                         url = "https://tiktok-tts.weilnet.workers.dev/api/generation"
                         payload = {"text": line, "voice": voice_options[selected_voice]}
@@ -33,13 +38,35 @@ def alpha_long_song_studio():
 
                         if "data" in data:
                             audio_bytes = base64.b64decode(data["data"])
-                            # හැම පේළියකටම වෙන වෙනම Player එකක් පෙන්වනවා
-                            st.write(f"🎶 Part {i+1}: {line}")
-                            st.audio(audio_bytes, format='audio/mp3')
-                        
+                            # හැම කෑල්ලක්ම එක දිගට අලවනවා
+                            combined_audio.write(audio_bytes)
+                            success_count += 1
                     except:
-                        st.error(f"Part {i+1} එකේදී පොඩි අවුලක් වුණා.")
-        else:
-            st.warning("කරුණාකර පද ලියන්න.")
+                        continue # පොඩි වැරදීමක් වුණොත් ඊළඟ පේළියට යනවා
 
-alpha_long_song_studio()
+                if success_count > 0:
+                    combined_audio.seek(0)
+                    full_audio_data = combined_audio.read()
+                    
+                    st.success("සම්පූර්ණ සින්දුව සාර්ථකව සකස් කළා!")
+                    
+                    # 🎧 එකම එක Player එකක් පමණයි පෙන්වන්නේ
+                    st.audio(full_audio_data, format='audio/mp3')
+                    
+                    # 📥 මුළු සින්දුවම Download කරන්න බට්න් එක
+                    st.download_button(
+                        label="Download Full Song MP3 📥",
+                        data=full_audio_data,
+                        file_name="Alpha_Full_Song.mp3",
+                        mime="audio/mp3",
+                        use_container_width=True
+                    )
+                else:
+                    st.error("සින්දුව සෑදීමට නොහැකි වුණා. කරුණාකර පේළි පරීක්ෂා කරන්න.")
+        else:
+            st.warning("කරුණාකර පද පේළි කිහිපයක් ඇතුළත් කරන්න.")
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.caption("Created by Hasith | Alpha AI Elite Project")
+
+alpha_full_song_only()
