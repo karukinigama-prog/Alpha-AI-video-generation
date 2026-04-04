@@ -1,34 +1,42 @@
 import streamlit as st
-import urllib.parse
+import requests
+import base64
 
-def alpha_custom_song_gen():
-    st.subheader("🎸 Alpha Custom Lyrics Song Creator")
-    
-    # 1. සින්දුවේ පද පේළි ටික මෙතන ලියන්න
-    user_lyrics = st.text_area("සින්දුවේ පද පේළි (English):", 
-                                "In the stars of Alpha AI,\nWe reach for the neon sky.\nHasith leads the way,\nTo a brighter digital day.")
+def alpha_fast_lyrics_singer():
+    st.subheader("🎸 Alpha Fast Lyrics Singer")
+    st.write("වචන දුන්නම AI එක ලවා සින්දුවක් කරවන්න (gTTS වගේම ලේසියි).")
 
-    # 2. සංගීත වර්ගය (Genre)
-    genre = st.selectbox("සංගීත වර්ගය:", ["Pop", "Rock", "Electronic", "Lo-fi", "Hip-hop"])
+    # සින්දුවේ පද (English)
+    lyrics = st.text_area("සින්දුවේ පද පේළි (English):", 
+                          "In the stars of Alpha AI, We reach for the neon sky.")
 
-    if st.button("Generate My Song 🎶"):
-        if user_lyrics:
-            with st.spinner("ඔයාගේ පද පේළි වලට තාලයක් දමමින් පවතී..."):
+    if st.button("Sing This Now! 🎶"):
+        if lyrics:
+            with st.spinner("AI එක සින්දුව නිර්මාණය කරමින් පවතී..."):
                 try:
-                    # Prompt එක සකස් කරන ආකාරය (Style + Lyrics)
-                    full_prompt = f"Style: {genre}. Lyrics: {user_lyrics}"
-                    encoded_prompt = urllib.parse.quote(full_prompt)
+                    # මේක තමයි නොමිලේම සින්දු කියන TikTok API එක
+                    # මෙතන 'en_female_f08_twinkle' කියන්නේ සින්දු කියන හඬක්
+                    url = "https://tiktok-tts.weilnet.workers.dev/api/generation"
+                    payload = {
+                        "text": lyrics,
+                        "voice": "en_female_f08_twinkle" # මේක Singing voice එකක්
+                    }
                     
-                    # Sunopollination model එක පාවිච්චි කිරීම
-                    song_url = f"https://gen.pollinations.ai/audio/{encoded_prompt}?model=sunopollination"
-                    
-                    # සින්දුව ප්ලේ කිරීම
-                    st.audio(song_url)
-                    st.success("ඔන්න ඔයාගේ පද පේළි වලට අනුව සින්දුව හැදුවා!")
-                    
-                except Exception as e:
-                    st.error("සර්වර් එකේ පමාවක්. නැවත උත්සාහ කරන්න.")
-        else:
-            st.warning("කරුණාකර සින්දුවේ පද ඇතුළත් කරන්න.")
+                    response = requests.post(url, json=payload)
+                    data = response.json()
 
-alpha_custom_song_gen()
+                    if "data" in data:
+                        # ලැබෙන base64 audio එක ප්ලේ කිරීම
+                        audio_base64 = data["data"]
+                        audio_bytes = base64.b64decode(audio_base64)
+                        st.audio(audio_bytes, format='audio/mp3')
+                        st.success("ඔන්න AI එක ලස්සනට සින්දුව කිව්වා!")
+                    else:
+                        st.error("සර්වර් එකේ පොඩි ප්‍රශ්නයක්. වෙනත් හඬක් උත්සාහ කරමු.")
+                        
+                except Exception as e:
+                    st.error("සම්බන්ධතාවයේ දෝෂයක්. කරුණාකර නැවත උත්සාහ කරන්න.")
+        else:
+            st.warning("කරුණාකර පද පේළි ඇතුළත් කරන්න.")
+
+alpha_fast_lyrics_singer()
