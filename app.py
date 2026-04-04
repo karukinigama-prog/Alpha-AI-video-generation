@@ -2,53 +2,44 @@ import streamlit as st
 import requests
 import base64
 
-def alpha_pro_singer():
-    st.subheader("🎸 Alpha Pro Lyrics Singer")
-    st.write("කැමති හඬක් තෝරාගෙන පද පේළි සින්දුවක් බවට පත් කරන්න.")
-
-    # 1. සින්දුවේ පද පේළි (English)
-    lyrics = st.text_area("සින්දුවේ පද පේළි (English):", 
-                          "In the stars of Alpha AI, We reach for the neon sky.")
-
-    # 2. හඬවල් තෝරන ලිස්ට් එක (Selectbox)
-    voice_options = {
-        "Female (Twinkle) - ලස්සන කාන්තා හඬක්": "en_female_f08_twinkle",
-        "Male (Lobby) - ගම්භීර පිරිමි හඬක්": "en_male_m03_lobby",
-        "Classic (Salute d'Amour) - පැරණි පන්නයේ හඬක්": "en_female_f08_salut_damour"
-    }
+def alpha_long_song_studio():
+    st.subheader("🎤 Alpha Long Song Studio")
     
-    selected_voice_name = st.selectbox("ගායනා කරන හඬ තෝරන්න:", list(voice_options.keys()))
-    voice_id = voice_options[selected_voice_name]
+    # පද පේළි ගොඩක් ලියන්න ඉඩ දෙනවා
+    lyrics = st.text_area("සින්දුවේ පද පේළි (දිගට ලියන්න):", 
+                          "In the stars of Alpha AI, We reach for the neon sky.\n"
+                          "Hasith leads the way today, To a brighter digital day.\n"
+                          "We are coding every night, Making dreams and making light.")
 
-    if st.button("Start Singing 🎶"):
+    voice_options = {
+        "Female (Twinkle)": "en_female_f08_twinkle",
+        "Male (Lobby)": "en_male_m03_lobby"
+    }
+    selected_voice = st.selectbox("Singer:", list(voice_options.keys()))
+
+    if st.button("Generate Full Song 🎧"):
         if lyrics:
-            with st.spinner(f"{selected_voice_name} හඬින් සින්දුව නිර්මාණය කරමින් පවතී..."):
-                try:
-                    # TikTok TTS API එකට සම්බන්ධ වීම
-                    url = "https://tiktok-tts.weilnet.workers.dev/api/generation"
-                    payload = {
-                        "text": lyrics,
-                        "voice": voice_id
-                    }
-                    
-                    response = requests.post(url, json=payload)
-                    data = response.json()
+            # 1. පද පේළි ටික කොටස් වලට කඩනවා (පේළියෙන් පේළියට)
+            lines = [line.strip() for line in lyrics.split('\n') if line.strip()]
+            
+            with st.spinner(f"කොටස් {len(lines)} කින් සින්දුව නිර්මාණය කරයි..."):
+                for i, line in enumerate(lines):
+                    try:
+                        url = "https://tiktok-tts.weilnet.workers.dev/api/generation"
+                        payload = {"text": line, "voice": voice_options[selected_voice]}
+                        
+                        response = requests.post(url, json=payload)
+                        data = response.json()
 
-                    if "data" in data:
-                        # ලැබෙන base64 audio එක ප්ලේ කිරීම
-                        audio_base64 = data["data"]
-                        audio_bytes = base64.b64decode(audio_base64)
+                        if "data" in data:
+                            audio_bytes = base64.b64decode(data["data"])
+                            # හැම පේළියකටම වෙන වෙනම Player එකක් පෙන්වනවා
+                            st.write(f"🎶 Part {i+1}: {line}")
+                            st.audio(audio_bytes, format='audio/mp3')
                         
-                        st.audio(audio_bytes, format='audio/mp3')
-                        st.success(f"ඔන්න {selected_voice_name} හඬින් සින්දුව හැදුවා!")
-                    else:
-                        st.error("සර්වර් එකේ පොඩි ප්‍රශ්නයක්. පසුව උත්සාහ කරන්න.")
-                        
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                    except:
+                        st.error(f"Part {i+1} එකේදී පොඩි අවුලක් වුණා.")
         else:
-            st.warning("කරුණාකර පද පේළි ඇතුළත් කරන්න.")
+            st.warning("කරුණාකර පද ලියන්න.")
 
-    st.caption("Created by Hasith | TikTok Singing Engine")
-
-alpha_pro_singer()
+alpha_long_song_studio()
