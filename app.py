@@ -1,43 +1,34 @@
 import streamlit as st
-import requests
+import urllib.parse
 
-def alpha_video_explorer_v3():
-    st.subheader("📽️ Alpha Ultimate Video Explorer (V1)")
+def alpha_custom_song_gen():
+    st.subheader("🎸 Alpha Custom Lyrics Song Creator")
     
-    # 1. පියවර: ඔයාගේ Pexels API Key එක මෙතනට දාන්න
-    PEXELS_API_KEY = "ඔයාගේ_API_KEY_එක_මෙතනට_දාන්න" 
+    # 1. සින්දුවේ පද පේළි ටික මෙතන ලියන්න
+    user_lyrics = st.text_area("සින්දුවේ පද පේළි (English):", 
+                                "In the stars of Alpha AI,\nWe reach for the neon sky.\nHasith leads the way,\nTo a brighter digital day.")
 
-    query = st.text_input("ඔයාට අවශ්‍ය වීඩියෝ වර්ගය (English):", "Sci-fi robot animation")
+    # 2. සංගීත වර්ගය (Genre)
+    genre = st.selectbox("සංගීත වර්ගය:", ["Pop", "Rock", "Electronic", "Lo-fi", "Hip-hop"])
 
-    if st.button("Search Video 🔍"):
-        if query:
-            with st.spinner("අලුත්ම Pexels V1 පද්ධතියෙන් වීඩියෝ සොයමින් පවතී..."):
-                headers = {"Authorization": PEXELS_API_KEY}
-                
-                # මෙන්න අලුත් URL එක (api.pexels.com/v1/videos/search)
-                url = f"https://api.pexels.com/v1/videos/search?query={query}&per_page=1"
-                
+    if st.button("Generate My Song 🎶"):
+        if user_lyrics:
+            with st.spinner("ඔයාගේ පද පේළි වලට තාලයක් දමමින් පවතී..."):
                 try:
-                    response = requests.get(url, headers=headers)
-                    data = response.json()
-
-                    # දත්ත ලැබෙනවද කියලා චෙක් කිරීම
-                    if 'videos' in data and len(data['videos']) > 0:
-                        # වීඩියෝ ලින්ක් එක ලබාගැනීම
-                        video_file = data['videos'][0]['video_files'][0]['link']
-                        
-                        st.video(video_file)
-                        st.success("High Quality වීඩියෝ එකක් සාර්ථකව හමුවුණා!")
-                    else:
-                        st.error("වීඩියෝවක් හමුවුණේ නැහැ. කරුණාකර API Key එක හෝ සෙවුම් වචනය පරීක්ෂා කරන්න.")
-                        # මොකක්ද වෙලා තියෙන ප්‍රශ්නය කියලා බලන්න මේක පාවිච්චි කරන්න
-                        # st.write(data) 
-                
+                    # Prompt එක සකස් කරන ආකාරය (Style + Lyrics)
+                    full_prompt = f"Style: {genre}. Lyrics: {user_lyrics}"
+                    encoded_prompt = urllib.parse.quote(full_prompt)
+                    
+                    # Sunopollination model එක පාවිච්චි කිරීම
+                    song_url = f"https://gen.pollinations.ai/audio/{encoded_prompt}?model=sunopollination"
+                    
+                    # සින්දුව ප්ලේ කිරීම
+                    st.audio(song_url)
+                    st.success("ඔන්න ඔයාගේ පද පේළි වලට අනුව සින්දුව හැදුවා!")
+                    
                 except Exception as e:
-                    st.error(f"පද්ධතියේ දෝෂයක්: {e}")
+                    st.error("සර්වර් එකේ පමාවක්. නැවත උත්සාහ කරන්න.")
         else:
-            st.warning("කරුණාකර සෙවිය යුතු දෙයක් ලියන්න.")
+            st.warning("කරුණාකර සින්දුවේ පද ඇතුළත් කරන්න.")
 
-    st.caption("Updated to V1 API | Created by Hasith")
-
-alpha_video_explorer_v3()
+alpha_custom_song_gen()
