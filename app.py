@@ -1,84 +1,51 @@
 import streamlit as st
 import requests
-import base64
-import io
 
-def alpha_ultimate_full_song_studio():
-    st.markdown("<h2 style='text-align: center;'>🔥 Alpha AI: Ultimate Full Song Studio</h2>", unsafe_allow_html=True)
-    st.write("Hasith, මෙතනින් ඔයාගේ සම්පූර්ණ සින්දුවම කිසිම අඩුවක් නැතිව නිර්මාණය කරගන්න.")
+# --- CONFIGURATION ---
+# මෙතනට ඔයාගේ Colab එකෙන් ලැබුණු URL එක දාන්න (අගට /generate කෑල්ල අමතක කරන්න එපා)
+COLAB_URL = "https://revolution-functions-toolbar-christ.trycloudflare.com/generate"
 
-    # 1. පද පේළි ඇතුළත් කිරීම (සෑම පේළියක්ම අලුත් පේළියක ලියන්න)
-    lyrics = st.text_area("සින්දුවේ පද පේළි (Lyrics):", 
-                          "Yo, Alpha AI is coming to town,\n"
-                          "Hasith is the one who wears the crown.\n"
-                          "From the code to the rhythm, we never slow down,\n"
-                          "The best AI system that can be found.",
-                          height=150)
+# --- UI SETTINGS ---
+st.set_page_config(page_title="Alpha AI Video Gen", page_icon="🎬", layout="centered")
 
-    # 2. ඔයා ඉල්ලපු සින්දු විලාසයන් (Styles)
-    music_styles = {
-        "🎧 Hip-Hop / Rap (Lobby)": "en_male_m03_lobby",
-        "🎸 Rock Style (Sunshine)": "en_male_m03_sunshine",
-        "✨ Pop Style (Twinkle)": "en_female_f08_twinkle",
-        "🎻 Classic Style (Salute)": "en_female_f08_salut_damour",
-        "🎙️ Deep Narration (Gembira)": "en_male_narration"
-    }
-    
-    selected_style = st.selectbox("සින්දුවේ විලාසය (Select Style):", list(music_styles.keys()))
-    voice_id = music_styles[selected_style]
+st.title("🎬 Alpha AI Video Generator")
+st.markdown("Created by **Hasith**") # ඔයාගේ බ්‍රෑන්ඩින් එක මෙතන තියෙනවා
+st.write("රූපයක් ලබා දී එය සජීවීකරණය කරන්න (Image-to-Video)")
 
-    if st.button("Generate Full Song & Download 🎤", use_container_width=True):
-        if lyrics:
-            # පේළි වෙන් කරගැනීම
-            lines = [line.strip() for line in lyrics.split('\n') if line.strip()]
-            
-            # සියලුම Audio කෑලි එකතු කරන තැන
-            combined_audio = io.BytesIO()
-            
-            with st.spinner(f"Alpha AI {selected_style} විලාසයෙන් සම්පූර්ණ සින්දුව සකස් කරයි..."):
-                success_count = 0
-                for line in lines:
-                    try:
-                        # TikTok TTS Engine එකට සම්බන්ධ වීම
-                        url = "https://tiktok-tts.weilnet.workers.dev/api/generation"
-                        payload = {"text": line, "voice": voice_id}
-                        
-                        response = requests.post(url, json=payload)
-                        data = response.json()
+# --- INPUT ---
+image_url = st.text_input("ඔබේ Image URL එක ඇතුළත් කරන්න (උදා: Unsplash ලින්ක් එකක්):")
 
-                        if "data" in data:
-                            audio_bytes = base64.b64decode(data["data"])
-                            # හැම Audio කොටසක්ම එක පෙළට අලවනවා
-                            combined_audio.write(audio_bytes)
-                            success_count += 1
-                    except:
-                        continue # එකක් වැරදුණොත් ඊළඟ එකට යනවා
-
-                if success_count > 0:
-                    # Pointer එක මුලට අරගෙන Full Data එක කියවීම
-                    combined_audio.seek(0)
-                    full_audio_data = combined_audio.read()
+if st.button("Generate Video ✨"):
+    if image_url:
+        with st.spinner("Colab සර්වර් එකෙන් වීඩියෝව හදනවා... මේකට විනාඩියක් පමණ ගත විය හැක."):
+            try:
+                # Colab API එකට රික්වෙස්ට් එක යැවීම
+                response = requests.post(COLAB_URL, json={"image_url": image_url}, timeout=120)
+                
+                if response.status_code == 200:
+                    # වීඩියෝ එක සාර්ථකව ලැබුණොත් එය save කර පෙන්වීම
+                    with open("temp_video.mp4", "wb") as f:
+                        f.write(response.content)
                     
-                    st.success(f"නියමයි හසීත්! පේළි {success_count} කින් යුත් සම්පූර්ණ සින්දුව සූදානම්.")
+                    st.success("වීඩියෝව සාර්ථකව නිපදවා ඇත!")
+                    st.video("temp_video.mp4")
                     
-                    # එකම ප්ලේයර් එකකින් මුළු සින්දුවම අහන්න
-                    st.audio(full_audio_data, format='audio/mp3')
-                    
-                    # 📥 මුළු සින්දුවම එකවර Download කරන්න බට්න් එක
-                    st.download_button(
-                        label="Download Full Song MP3 📥",
-                        data=full_audio_data,
-                        file_name="Alpha_Ultimate_Song.mp3",
-                        mime="audio/mp3",
-                        use_container_width=True
-                    )
+                    # Download කරන්න බටන් එකක්
+                    with open("temp_video.mp4", "rb") as file:
+                        st.download_button(
+                            label="Download Video",
+                            data=file,
+                            file_name="alpha_ai_video.mp4",
+                            mime="video/mp4"
+                        )
                 else:
-                    st.error("සර්වර් එකේ පොඩි ප්‍රශ්නයක්. නැවත උත්සාහ කරන්න.")
-        else:
-            st.warning("කරුණාකර පද පේළි ඇතුළත් කරන්න.")
+                    st.error(f"සර්වර් එකේ ගැටලුවක්! (Error Code: {response.status_code})")
+                    st.info("ඔබේ Colab එක රන් වෙනවාද කියා නැවත පරීක්ෂා කරන්න.")
+                    
+            except Exception as e:
+                st.error(f"සම්බන්ධ වීමට නොහැකි විය: {e}")
+    else:
+        st.warning("කරුණාකර රූපයක URL එකක් ඇතුළත් කරන්න.")
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.caption("Created by Hasith | Alpha AI Elite Project")
-
-# App එක ප්ලේ කරන්න
-alpha_ultimate_full_song_studio()
+st.divider()
+st.caption("සටහන: මෙම සේවාව ක්‍රියාත්මක වීමට ඔබේ Google Colab සර්වර් එක 'Running' තත්වයේ තිබිය යුතුය.")
