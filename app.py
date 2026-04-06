@@ -1,51 +1,73 @@
 import streamlit as st
-import requests
+import fal_client
+import os
 
-# --- CONFIGURATION ---
-# මෙතනට ඔයාගේ Colab එකෙන් ලැබුණු URL එක දාන්න (අගට /generate කෑල්ල අමතක කරන්න එපා)
-COLAB_URL = "https://revolution-functions-toolbar-christ.trycloudflare.com/generate"
+# --- API CONFIGURATION ---
+# ඔයා දුන්න Key එක මෙතන තියෙනවා. 
+# පසුව ආරක්ෂාව සඳහා මෙය Streamlit Secrets වලට දාන්න.
+os.environ["FAL_KEY"] = "e17aeca9-b41e-4cac-95f0-996370af31ff:10878663de189655b7340d51c1518534"
 
 # --- UI SETTINGS ---
-st.set_page_config(page_title="Alpha AI Video Gen", page_icon="🎬", layout="centered")
+st.set_page_config(page_title="Alpha AI - Fast Video Gen", page_icon="⚡", layout="centered")
 
-st.title("🎬 Alpha AI Video Generator")
-st.markdown("Created by **Hasith**") # ඔයාගේ බ්‍රෑන්ඩින් එක මෙතන තියෙනවා
-st.write("රූපයක් ලබා දී එය සජීවීකරණය කරන්න (Image-to-Video)")
+# Custom CSS for Branding
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0e1117;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        height: 3em;
+        background-color: #ff4b4b;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- INPUT ---
-image_url = st.text_input("ඔබේ Image URL එක ඇතුළත් කරන්න (උදා: Unsplash ලින්ක් එකක්):")
+st.title("⚡ Alpha AI Video Generator")
+st.subheader("Created by Hasith")
+st.write("විනාඩියකටත් අඩු කාලයකින් ඕනෑම රූපයක් වීඩියෝවක් බවට පත් කරන්න.")
 
-if st.button("Generate Video ✨"):
+# --- INPUT SECTION ---
+image_url = st.text_input("ඔබේ Image URL එක මෙතනට ලබා දෙන්න:", placeholder="https://unsplash.com/photo-xxx")
+
+if st.button("Generate AI Video ✨"):
     if image_url:
-        with st.spinner("Colab සර්වර් එකෙන් වීඩියෝව හදනවා... මේකට විනාඩියක් පමණ ගත විය හැක."):
+        with st.spinner("Fal.ai Cloud සර්වර් එක හරහා වීඩියෝව සකසමින් පවතී..."):
             try:
-                # Colab API එකට රික්වෙස්ට් එක යැවීම
-                response = requests.post(COLAB_URL, json={"image_url": image_url}, timeout=120)
+                # Fal.ai API එක හරහා Stable Video Diffusion භාවිතා කිරීම
+                handler = fal_client.submit(
+                    "fal-ai/stable-video-diffusion/img2vid",
+                    arguments={
+                        "image_url": image_url,
+                        "motion_bucket_id": 127,
+                        "fps": 24
+                    },
+                )
                 
-                if response.status_code == 200:
-                    # වීඩියෝ එක සාර්ථකව ලැබුණොත් එය save කර පෙන්වීම
-                    with open("temp_video.mp4", "wb") as f:
-                        f.write(response.content)
-                    
+                result = handler.get()
+                video_url = result['video']['url']
+                
+                if video_url:
                     st.success("වීඩියෝව සාර්ථකව නිපදවා ඇත!")
-                    st.video("temp_video.mp4")
+                    st.video(video_url)
                     
-                    # Download කරන්න බටන් එකක්
-                    with open("temp_video.mp4", "rb") as file:
-                        st.download_button(
-                            label="Download Video",
-                            data=file,
-                            file_name="alpha_ai_video.mp4",
-                            mime="video/mp4"
-                        )
+                    # Download පහසුකම
+                    st.download_button(
+                        label="Download Video 📥",
+                        data=video_url,
+                        file_name="alpha_ai_video.mp4",
+                        mime="video/mp4"
+                    )
                 else:
-                    st.error(f"සර්වර් එකේ ගැටලුවක්! (Error Code: {response.status_code})")
-                    st.info("ඔබේ Colab එක රන් වෙනවාද කියා නැවත පරීක්ෂා කරන්න.")
+                    st.error("වීඩියෝව ලබා ගැනීමට නොහැකි විය.")
                     
             except Exception as e:
-                st.error(f"සම්බන්ධ වීමට නොහැකි විය: {e}")
+                st.error(f"දෝෂයක් සිදු විය: {str(e)}")
     else:
         st.warning("කරුණාකර රූපයක URL එකක් ඇතුළත් කරන්න.")
 
 st.divider()
-st.caption("සටහන: මෙම සේවාව ක්‍රියාත්මක වීමට ඔබේ Google Colab සර්වර් එක 'Running' තත්වයේ තිබිය යුතුය.")
+st.caption("© 2026 Alpha AI | Created by Hasith Karunarathna")
