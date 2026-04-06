@@ -12,7 +12,8 @@ else:
     st.stop()
 
 # Hugging Face Model URL (Stable Diffusion XL)
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+# පරණ එක අයින් කරලා මේක දාන්න
+API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 # --- UI SETTINGS ---
