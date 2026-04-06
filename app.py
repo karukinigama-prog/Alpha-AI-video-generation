@@ -1,63 +1,83 @@
 import streamlit as st
-from gradio_client import Client
-import os
+import requests
+import io
+from PIL import Image
 
-# --- UI SETTINGS ---
-st.set_page_config(page_title="Alpha AI - Ultimate Video", page_icon="🎬", layout="centered")
+# --- API KEYS FROM SECRETS ---
+try:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+    PIXABAY_KEY = st.secrets["PIXABAY_KEY"]
+except:
+    st.error("කරුණාකර Streamlit Secrets වල API Keys ඇතුළත් කරන්න!")
+    st.stop()
+
+# --- UI CONFIGURATION ---
+st.set_page_config(page_title="Alpha AI - Multimedia Elite", page_icon="🚀", layout="centered")
 
 st.markdown("""
     <style>
     .main { background-color: #050505; color: white; }
-    .stTextArea textarea { background-color: #111; color: #ff0055; border: 1.5px solid #ff0055; }
+    .stTextInput > div > div > input, .stTextArea textarea { 
+        background-color: #111; color: #00ffcc; border: 1px solid #00ffcc; 
+    }
     .stButton>button {
         width: 100%;
-        background: linear-gradient(90deg, #ff0055, #ffcc00);
-        color: black;
-        font-weight: bold;
-        font-size: 18px;
-        height: 3.5em;
-        border-radius: 12px;
-        border: none;
+        background: linear-gradient(90deg, #00ffcc, #0055ff);
+        color: white; font-weight: bold; border-radius: 10px; height: 3.5em;
+    }
+    .result-card {
+        border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 20px;
+        background-color: #111;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎬 Alpha AI Ultimate Video")
+st.title("🚀 Alpha AI Multimedia Elite")
 st.markdown("### Created by **Hasith Karunarathna**")
-st.write("මෙය කිසිම API Key එකක් අවශ්‍ය නොවන, සීමා රහිත වෘත්තීය මට්ටමේ වීඩියෝ ජෙනරේටරයයි.")
 
-# --- INPUT SECTION ---
-prompt = st.text_area("ඔබට අවශ්‍ය වීඩියෝවේ විස්තරය ලියන්න (English Prompt):", 
-                     placeholder="Example: A cinematic drone shot of a tropical island, 4k, realistic...")
+# --- TABS FOR DIFFERENT FEATURES ---
+tab1, tab2 = st.tabs(["🎨 AI Image Generator", "🎥 Real Video Finder"])
 
-if st.button("Generate High-End Video 🚀"):
-    if prompt:
-        with st.spinner("ලෝකයේ වේගවත්ම සර්වර් එකකට සම්බන්ධ වී වීඩියෝව නිර්මාණය කරමින් පවතී... (විනාඩි 1-2ක් ගතවිය හැක)"):
-            try:
-                # Gradio Client හරහා ලෝකයේ ප්‍රබලම Space එකකට සම්බන්ධ වීම
-                # මෙහිදී කිසිම API Key එකක් අවශ්‍ය නොවේ
-                client = Client("tencent/HunyuanVideo")
+# --- TAB 1: AI IMAGE GENERATOR (Hugging Face) ---
+with tab1:
+    st.header("AI Image Generator")
+    img_prompt = st.text_area("මොන වගේ රූපයක්ද ඕනේ? (Prompt):", key="img_p", placeholder="e.g. A robotic lion, neon lights, 8k...")
+    
+    if st.button("Generate AI Image ✨"):
+        if img_prompt:
+            with st.spinner("AI රූපය සකසමින් පවතී..."):
+                API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
+                headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+                response = requests.post(API_URL, headers=headers, json={"inputs": img_prompt})
                 
-                result = client.predict(
-                    prompt=prompt,
-                    api_name="/generate_video"
-                )
-                
-                # වීඩියෝවේ පාත් එක ලබා ගැනීම
-                video_path = result
-                
-                if video_path:
-                    st.success("වීඩියෝව සාර්ථකව නිපදවා ඇත!")
-                    st.video(video_path)
-                    
-                    # Download Button
-                    with open(video_path, "rb") as f:
-                        st.download_button("Download Video 📥", f, file_name="alpha_ai_video.mp4")
-                
-            except Exception as e:
-                st.error("දැනට සර්වර් එකේ පෝලිමක් (Queue) පවතී. කරුණාකර මොහොතකින් නැවත උත්සාහ කරන්න.")
-    else:
-        st.warning("කරුණාකර වීඩියෝව ගැන විස්තරයක් ලියන්න.")
+                if response.status_code == 200:
+                    image = Image.open(io.BytesIO(response.content))
+                    st.image(image, use_container_width=True)
+                    st.download_button("Download Image 📥", response.content, "alpha_ai.png", "image/png")
+                else:
+                    st.error("සර්වර් එකේ ගැටලුවක්. පසුව උත්සාහ කරන්න.")
+
+# --- TAB 2: REAL VIDEO FINDER (Pixabay) ---
+with tab2:
+    st.header("Real Video Search")
+    vid_query = st.text_input("සොයන වීඩියෝව ගැන ලියන්න:", key="vid_q", placeholder="e.g. Nature, Space, Cars...")
+    
+    if st.button("Search Videos 🔍"):
+        if vid_query:
+            with st.spinner("වීඩියෝ සොයමින් පවතී..."):
+                v_url = f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={vid_query.replace(' ', '+')}&per_page=5"
+                v_res = requests.get(v_url).json()
+
+                if v_res.get('hits'):
+                    for video in v_res['hits']:
+                        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                        v_link = video['videos']['medium']['url']
+                        st.video(v_link)
+                        st.write(f"품질: {video['width']}x{video['height']}")
+                        st.markdown(f"[Direct Download 📥]({v_link})")
+                        st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.warning("වීඩියෝ හමු වූයේ නැත.")
 
 st.divider()
-st.caption("Alpha AI Ultimate | No API Key Required | Powered by HunyuanVideo")
+st.caption("Alpha AI Elite Edition | Status: Fast & Secure ✅")
