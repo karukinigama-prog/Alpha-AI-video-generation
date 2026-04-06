@@ -1,87 +1,95 @@
 import streamlit as st
-import random
-import time
+import requests
+import io
+from PIL import Image
+
+# --- API CONFIGURATION (Using Streamlit Secrets) ---
+# මෙහිදී කෙලින්ම Token එක ලියනවා වෙනුවට Secrets වලින් ලබා ගනී
+if "HF_TOKEN" in st.secrets:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+else:
+    st.error("කරුණාකර Streamlit Cloud Settings -> Secrets වල HF_TOKEN එකතු කරන්න!")
+    st.stop()
+
+# Hugging Face Model URL (Stable Diffusion XL)
+API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 # --- UI SETTINGS ---
-st.set_page_config(page_title="Alpha AI - Ultimate", page_icon="💡", layout="centered")
+st.set_page_config(page_title="Alpha AI - Elite Edition", page_icon="💎", layout="centered")
 
-# Custom CSS for an Elite Dark UI (No Image Breaks)
+# Custom CSS for Professional Dark UI
 st.markdown("""
     <style>
-    .main { background-color: #030303; color: white; }
-    .stTextInput > div > div > input { background-color: #1a1a1a; color: #00ffcc; border: 1.5px solid #00ffcc; }
+    .main { background-color: #000000; color: white; }
+    .stTextArea textarea { 
+        background-color: #111; 
+        color: #00ffcc; 
+        border: 1px solid #00ffcc;
+        border-radius: 10px;
+    }
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #00ffcc, #0099ff);
-        color: black;
+        background: linear-gradient(90deg, #7000ff, #00ffcc);
+        color: white;
         font-weight: bold;
-        font-size: 16px;
         border: none;
-        padding: 12px;
-        border-radius: 8px;
-        transition: 0.2s;
+        height: 3.5em;
+        border-radius: 10px;
+        transition: 0.3s;
     }
     .stButton>button:hover {
         transform: scale(1.02);
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
         color: white;
     }
-    .main-image {
-        border-radius: 10px;
-        border: 2px solid #00ffcc;
-        box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-    }
+    footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("💡 Alpha AI - Unlimited Pro")
-st.markdown("### **Created by Hasith Karunarathna**")
-st.write("මෙය කිසිම විටක **Lock නොවන**, සීමා රහිත සහ **කැඩුණු රූප නොඑන** අනුවාදයයි.")
+# --- HEADER ---
+st.title("💎 Alpha AI Elite Image Gen")
+st.markdown("### Created by **Hasith Karunarathna**")
+st.write("Hugging Face API හරහා ක්‍රියාත්මක වන සීමා රහිත Ultra HD රූප ජෙනරේටරය.")
 
 # --- INPUT SECTION ---
-with st.container():
-    prompt = st.text_input("ඔබේ සිතුවිල්ල ඉංග්‍රීසියෙන් ලියන්න (Prompt):", placeholder="Example: A futuristic battle, 8k, cinematic, realistic")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        # රූපයේ ආකාරය (Styles)
-        style = st.selectbox("රූපයේ විලාසය:", ["Photorealistic", "Digital Art", "Oil Painting", "Vector Art", "Anime"])
-    with col2:
-        # Seed එක වෙනුවට "Aesthetic" තෝරමු
-        quality = st.select_slider("රූපයේ Aesthetic ගුණය:", options=["Standard", "Detailed", "Ultra Detailed"], value="Ultra Detailed")
+prompt = st.text_area(
+    "ඔබේ සිතුවිල්ල ඉංග්‍රීසියෙන් ලියන්න (Prompt):", 
+    placeholder="e.g. A realistic Iron Man suit with Sri Lankan traditional patterns, 8k, highly detailed, cinematic lighting...",
+    height=150
+)
 
-if st.button("Generate Elite Image ✨"):
+if st.button("Generate Ultra HD Image 🚀"):
     if prompt:
-        with st.spinner("Alpha AI විසින් ඉතාමත් උසස් තත්වයේ රූපය නිර්මාණය කරමින් පවතී..."):
+        with st.spinner("Elite සර්වර් එකෙන් රූපය නිර්මාණය කරමින් පවතී..."):
             try:
-                # Prompt එක සකස් කිරීම
-                final_prompt = f"{prompt}, {style}, {quality}, highly detailed, 8k, masterpiece"
-                encoded_prompt = final_prompt.replace(" ", "-")
+                # API එකට Request එක යැවීම
+                response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
                 
-                # සෑම Request එකකටම අලුත් රූපයක් ලබා ගැනීමට Random Number එකක් (Seed)
-                random_seed = random.randint(1, 100000)
-                
-                # වඩාත් ස්ථාවර Unlimited API URL එක
-                # (මෙය Pollinations හරහා, නමුත් broken images වළක්වන ක්‍රමයකට)
-                image_url = f"https://pollinations.ai/p/{encoded_prompt}?seed={random_seed}&model=flux&width=1024&height=1024&nologo=true"
-                
-                # රූපය ප්‍රදර්ශනය කිරීම (Broken image එකක් නම්, retry කිරීම)
-                image_place = st.empty()
-                image_place.image(image_url, use_container_width=True, caption=f"Alpha AI Result: {prompt}")
-                
-                # Download Button
-                st.markdown(f'''
-                    <a href="{image_url}" target="_blank">
-                        <button style="width:100%; padding:14px; border-radius:10px; background-color:#28a745; color:white; border:none; cursor:pointer; font-size:16px; margin-top:10px; font-weight:bold;">
-                            Download Image (High Quality) 📥
-                        </button>
-                    </a>
-                ''', unsafe_allow_html=True)
-                
+                if response.status_code == 200:
+                    image_bytes = response.content
+                    image = Image.open(io.BytesIO(image_bytes))
+                    
+                    # රූපය පෙන්වීම
+                    st.image(image, use_container_width=True, caption=f"Alpha AI Result: {prompt}")
+                    
+                    # Download Button
+                    st.download_button(
+                        label="Download Image 📥",
+                        data=image_bytes,
+                        file_name="alpha_ai_elite.png",
+                        mime="image/png"
+                    )
+                elif response.status_code == 503:
+                    st.warning("සර්වර් එක දැනට කාර්යබහුලයි (Model Loading). කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.")
+                else:
+                    st.error(f"Error {response.status_code}: සම්බන්ධ වීමේ ගැටලුවක්. කරුණාකර පසුව උත්සාහ කරන්න.")
+                    
             except Exception as e:
-                st.error("දත්ත ලබා ගැනීමේදී ගැටලුවක් ඇති විය. කරුණාකර නැවත උත්සාහ කරන්න.")
+                st.error(f"දෝෂයක් සිදු විය: {e}")
     else:
-        st.warning("කරුණාකර මොකක් හරි විස්තරයක් ඇතුළත් කරන්න.")
+        st.warning("කරුණාකර රූපය පිළිබඳ විස්තරයක් ඇතුළත් කරන්න.")
 
+# --- FOOTER ---
 st.divider()
-st.caption("Alpha AI Ultimate Edition | Status: Elite Mode Online ✅ | No API Key | Version 3.0")
+st.caption("Alpha AI Elite Edition | Status: Online ✅ | Secured by Secrets")
