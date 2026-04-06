@@ -14,3 +14,4 @@ extra-streamlit-components
 duckduckgo_search
 gTTS
 gradio_client
+fal-client
