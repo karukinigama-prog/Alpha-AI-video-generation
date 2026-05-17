@@ -48,7 +48,7 @@ section[data-testid="stSidebar"],
 .stDeployButton { display: none !important; }
 
 .block-container {
-    padding: 0 !important;
+    padding: 0 16px !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
 }
@@ -272,23 +272,17 @@ elif st.session_state.logged_in:
 # ── LOGIN ────────────────────────────────────────────────────
 else:
     st.markdown("""
-    <div class="login-page">
-        <div class="l-header">
-            <div class="l-logo">NEXO</div>
-            <div class="l-sub">Your AI Companion</div>
-        </div>
+    <div style="text-align:center; padding: 30px 0 18px; position:relative; z-index:1;">
+        <div class="l-logo">NEXO</div>
+        <div class="l-sub">Your AI Companion</div>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown('<div class="l-card">', unsafe_allow_html=True)
-    st.markdown('<div class="l-title">Sign In ✦</div>', unsafe_allow_html=True)
-    st.markdown('<div class="l-desc">Enter your details to access Nexo AI</div>', unsafe_allow_html=True)
 
     name_in  = st.text_input("Your Name", placeholder="Hasith Heshan", key="n_in")
     email_in = st.text_input("Email Address", placeholder="you@example.com", key="e_in")
     remember = st.checkbox("Remember me for 30 days", value=True)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
     if st.button("✦ Sign In to Nexo", key="signin"):
         if not name_in.strip():
@@ -310,8 +304,6 @@ else:
 
     st.markdown("""
     <div class="l-footer">
-        No password required — just your name &amp; email.<br>
-        <span>No password required</span> · Nexo AI
+        No password required — just your name &amp; email · Nexo AI
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
